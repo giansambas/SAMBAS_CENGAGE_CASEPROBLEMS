@@ -1,0 +1,229 @@
+﻿using System;
+using static System.Console;
+using System.Globalization;
+using System.Linq;
+
+class GreenvilleRevenue
+{
+    const int ENTRY_FEE = 25;
+    const int MIN_CONTESTANTS = 0;
+    const int MAX_CONTESTANTS = 30;
+    const char SENTINEL = 'Z';
+
+    static void Main()
+    {
+        int lastYearContestants = GetContestantNumber("last year");
+        int thisYearContestants = GetContestantNumber("this year");
+
+        WriteLine($"Last year's competition had {lastYearContestants} contestants, and this year's has {thisYearContestants} contestants");
+
+        int expectedRevenue = thisYearContestants * ENTRY_FEE;
+
+        WriteLine($"Revenue expected this year is {expectedRevenue.ToString("$0.00")}");
+
+        DisplayRelationship(thisYearContestants, lastYearContestants);
+
+        Contestant[] contestants = new Contestant[thisYearContestants];
+
+        GetContestantData(contestants);
+
+        DisplayTalentCounts(contestants);
+
+        GetLists(contestants);
+    }
+
+    static int GetContestantNumber(string year)
+    {
+        int contestants;
+        string input;
+        bool isValid;
+
+        do
+        {
+            Write($"Enter number of contestants {year} >> ");
+            input = ReadLine();
+
+            isValid = int.TryParse(input, out contestants) &&
+                      contestants >= MIN_CONTESTANTS &&
+                      contestants <= MAX_CONTESTANTS;
+            if (!isValid)
+            {
+                WriteLine("Please enter a number between 0 and 30, inclusive.");
+            }
+        } while (!isValid);
+
+        return contestants;
+    }
+
+    static void DisplayRelationship(int thisYear, int lastYear)
+    {
+        if (thisYear > lastYear * 2)
+        {
+            WriteLine("The competition is more than twice as big this year!");
+        }
+        else if (thisYear > lastYear)
+        {
+            WriteLine("The competition is bigger than ever!");
+        }
+        else
+        {
+            WriteLine("A tighter race this year! Come out and cast your vote!");
+        }
+    }
+
+    static void GetContestantData(Contestant[] contestants)
+    {
+        WriteLine();
+
+        for (int i = 0; i < contestants.Length; i++)
+        {
+            Contestant c = new Contestant();
+            string rawCodeInput;
+
+            Write($"Enter contestant name >> ");
+            c.Name = ReadLine();
+
+            WriteLine("Talent codes are:");
+            WriteLine("S    Singing");
+            WriteLine("D    Dancing");
+            WriteLine("M    Musical instrument");
+            WriteLine("O    Other");
+
+            do
+            {
+                Write($"Enter talent code >> ");
+
+                rawCodeInput = ReadLine();
+                string trimmedCode = rawCodeInput.Trim();
+
+                c.TalentCode = trimmedCode.ToUpper();
+
+                if (c.TalentCode == "I")
+                {
+                    string echoedCode = rawCodeInput;
+
+                    if (string.IsNullOrWhiteSpace(rawCodeInput))
+                    {
+                        echoedCode = "L";
+                    }
+
+                    WriteLine($"{echoedCode} is not a valid code");
+                }
+
+            } while (c.TalentCode == "I");
+
+            contestants[i] = c;
+        }
+    }
+
+    static void DisplayTalentCounts(Contestant[] contestants)
+    {
+        int[] counts = new int[Contestant.talentCodes.Length];
+
+        foreach (var c in contestants)
+        {
+            int index = Array.IndexOf(Contestant.talentCodes, c.TalentCode);
+            if (index >= 0)
+            {
+                counts[index]++;
+            }
+        }
+
+        WriteLine();
+        WriteLine("The types of talent are:");
+
+        for (int i = 0; i < Contestant.talentStrings.Length; i++)
+        {
+            WriteLine("{0, -18}{1, 1}", Contestant.talentStrings[i], counts[i]);
+        }
+    }
+
+    static void GetLists(Contestant[] contestants)
+    {
+        string codeInput;
+        string code;
+
+        do
+        {
+            WriteLine();
+            Write("Enter a talent code (S/D/M/O) to see the list or Z to exit: ");
+            codeInput = ReadLine();
+
+            string trimmedCode = codeInput.Trim();
+            code = trimmedCode.ToUpper();
+
+            if (code.Length == 1 && code[0] == SENTINEL)
+            {
+                break;
+            }
+
+            bool codeValid = Contestant.talentCodes.Contains(code);
+
+            if (codeValid)
+            {
+                DisplayContestantsByCode(contestants, code);
+            }
+            else
+            {
+                string echoedCode = codeInput;
+                if (string.IsNullOrWhiteSpace(echoedCode))
+                {
+                    echoedCode = "L";
+                }
+
+                WriteLine($"{echoedCode} is not a valid code");
+            }
+        } while (true);
+    }
+
+    static void DisplayContestantsByCode(Contestant[] contestants, string codeToMatch)
+    {
+        int index = Array.IndexOf(Contestant.talentCodes, codeToMatch);
+        string talentName = (index >= 0) ? Contestant.talentStrings[index] : "Unknown";
+
+        WriteLine($"Contestants with talent {talentName} are:");
+
+        foreach (var c in contestants)
+        {
+            if (c.TalentCode == codeToMatch)
+            {
+                WriteLine(c.Name);
+            }
+        }
+    }
+}
+
+class Contestant
+{
+    public static string[] talentCodes = { "S", "D", "M", "O" };
+    public static string[] talentStrings = { "Singing", "Dancing", "Musical instrument", "Other" };
+
+    public string Name { get; set; }
+
+    private string talentCodeField;
+    private string talentField;
+
+    public string TalentCode
+    {
+        get { return talentCodeField; }
+        set
+        {
+            int index = Array.IndexOf(talentCodes, value);
+            if (index >= 0)
+            {
+                talentCodeField = value;
+                talentField = talentStrings[index];
+            }
+            else
+            {
+                talentCodeField = "I";
+                talentField = "Invalid";
+            }
+        }
+    }
+
+    public string Talent
+    {
+        get { return talentField; }
+    }
+}
